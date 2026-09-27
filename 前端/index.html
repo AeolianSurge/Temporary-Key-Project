@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>临权控制台 · 临时凭证授权管理平台</title>
+		<meta name="description" content="轻量化临时密码共享与设备临时授权管理平台 — 限时授权、一键过期、随时收回。">
+		<link rel="icon"
+			href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="%233D8BFF"/><stop offset="1" stop-color="%232FE0CB"/></linearGradient></defs><rect width="24" height="24" rx="6" fill="url(%23g)"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="%23fff" stroke-width="1.8" stroke-linecap="round"/><rect x="6.5" y="11" width="11" height="8" rx="2" fill="none" stroke="%23fff" stroke-width="1.8"/><circle cx="12" cy="15" r="1.5" fill="%23fff"/></svg>'>
+		<link rel="preconnect" href="https://miaoda.feishu.cn">
+		<link rel="stylesheet"
+			href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+		<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+		<link rel="stylesheet" href="css/style.css">
+	</head>
+	<body>
+
+		<!-- ================= 登录模块（手机号 / 微信扫码） ================= -->
+		<div id="loginScreen" class="login-screen">
+			<div class="login-shell">
+				<div class="login-brand">
+					<div class="lb-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#06201b" stroke-width="2">
+							<rect x="5" y="10" width="14" height="10" rx="2.5" />
+							<path d="M8 10V7.5a4 4 0 0 1 8 0V10" />
+							<circle cx="12" cy="15" r="1.6" fill="#06201b" stroke="none" />
+						</svg></div>
+					<div class="lb-name">临权控制台</div>
+					<div class="lb-sub">TEMPORARY CREDENTIAL ACCESS</div>
+					<div class="lb-slogan">把临时密码的发放与回收，<br>做成一件安全、简单、可控的事。</div>
+					<div class="lb-feats">
+						<div class="lbf"><span class="lbf-ico"><svg viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+									stroke-linejoin="round">
+									<path d="M20 6 9 17l-5-5" />
+								</svg></span>限时授权 · 到期自动失效</div>
+						<div class="lbf"><span class="lbf-ico"><svg viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+									stroke-linejoin="round">
+									<path d="M8 12h8M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z" />
+								</svg></span>随时收回 · 一键吊销</div>
+						<div class="lbf"><span class="lbf-ico"><svg viewBox="0 0 24 24" fill="none"
+									stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+									stroke-linejoin="round">
+									<rect x="8" y="8" width="12" height="12" rx="2" />
+									<path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+								</svg></span>台账清晰 · 全程可追溯</div>
+					</div>
+				</div>
+
+				<div class="login-card">
+					<div class="lc-head">
+						<h2>欢迎回来</h2>
+						<p>登录后进入授权管理控制台</p>
+					</div>
+					<div class="login-tabs">
+						<button type="button" class="sel" data-ltab="phone">手机号登录</button>
+						<button type="button" data-ltab="wechat">微信登录</button>
+					</div>
+
+					<!-- 手机号登录 -->
+					<div class="ltab" id="ltab-phone">
+						<div class="field">
+							<label>手机号</label>
+							<div class="phone-row">
+								<span class="prefix">+86</span>
+								<input class="control" id="loginPhone" placeholder="请输入手机号" inputmode="numeric"
+									maxlength="11">
+							</div>
+						</div>
+						<div class="field">
+							<label>验证码</label>
+							<div class="code-row">
+								<input class="control" id="loginCode" placeholder="请输入验证码" inputmode="numeric"
+									maxlength="6">
+								<button type="button" class="code-btn" id="getCodeBtn">获取验证码</button>
+							</div>
+							<div class="hint" id="codeHint">演示环境：验证码固定为 123456</div>
+						</div>
+						<label class="agree">
+							<input type="checkbox" id="agreeBox">
+							<span>我已阅读并同意 <a href="#/terms">《用户协议》</a> 与 <a href="#/privacy">《隐私政策》</a></span>
+						</label>
+						<button type="button" class="submit login-submit" id="phoneLoginBtn">登 录</button>
+						<div class="lc-foot">未注册手机号验证通过后将自动创建账号</div>
+					</div>
+
+					<!-- 微信扫码登录 -->
+					<div class="ltab" id="ltab-wechat" style="display:none">
+						<div class="qr-box">
+							<img id="qrImg" alt="微信登录二维码">
+							<div class="qr-tip">请使用微信「扫一扫」扫码登录</div>
+							<div class="qr-refresh">二维码有效 5 分钟</div>
+						</div>
+						<button type="button" class="submit login-submit" id="wechatLoginBtn">模拟微信授权成功（演示）</button>
+						<div class="lc-foot">正式环境需对接微信开放平台 / 公众号 OAuth（二期）</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+		<div class="app">
+			<!-- ================= 侧栏导航 Sidebar ================= -->
+			<aside class="sidebar" id="sidebar">
+				<div class="brand">
+					<div class="brand-mark">
+						<svg viewBox="0 0 24 24" fill="none" stroke="#06201b" stroke-width="2">
+							<rect x="5" y="10" width="14" height="10" rx="2.5" />
+							<path d="M8 10V7.5a4 4 0 0 1 8 0V10" />
+							<circle cx="12" cy="15" r="1.6" fill="#06201b" stroke="none" />
+						</svg>
+					</div>
+					<div>
+						<div class="brand-name">临权</div>
+						<div class="brand-sub">TEMPORARY ACCESS</div>
+					</div>
+				</div>
+
+				<nav class="nav">
+					<div class="nav-label">工作台</div>
+					<a class="nav-item active" href="#/dashboard" data-view="dashboard">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+							stroke-linecap="round" stroke-linejoin="round">
+							<rect x="3" y="3" width="8" height="8" rx="2" />
+							<rect x="13" y="3" width="8" height="5" rx="2" />
+							<rect x="13" y="10" width="8" height="11" rx="2" />
+							<rect x="3" y="13" width="8" height="8" rx="2" />
+						</svg>
+						总览仪表盘
+					</a>
+					<a class="nav-item" href="#/create" data-view="create">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+							stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 5v14M5 12h14" />
+						</svg>
+						新建授权
+					</a>
+					<a class="nav-item" href="#/list" data-view="list">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+							stroke-linecap="round" stroke-linejoin="round">
+							<path d="M4 6h16M4 12h16M4 18h10" />
+						</svg>
+						授权管理
+						<span class="count" id="navListCount">0</span>
+					</a>
+					<a class="nav-item" href="#/stats" data-view="stats">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+							stroke-linecap="round" stroke-linejoin="round">
+							<path d="M3 3v18h18" />
+							<rect x="7" y="11" width="3" height="6" rx="1" />
+							<rect x="12" y="7" width="3" height="10" rx="1" />
+							<rect x="17" y="13" width="3" height="4" rx="1" />
+						</svg>
+						数据统计
+					</a>
+
+					<div class="nav-label" style="margin-top:16px">扩展模块 <span style="opacity:.6">(预留)</span></div>
+					<a class="nav-item" href="#/devices" data-view="devices">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+							stroke-linecap="round" stroke-linejoin="round">
+							<rect x="7" y="2" width="10" height="20" rx="2" />
+							<path d="M10 5h4M11 18h2" />
+						</svg>
+						设备监控
+						<span class="count" style="color:#6a7796;background:rgba(151,167,209,.06)">二期</span>
+					</a>
+					<a class="nav-item" href="#/export" data-view="export">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+							stroke-linecap="round" stroke-linejoin="round">
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+						</svg>
+						记录导出
+						<span class="count" style="color:#6a7796;background:rgba(151,167,209,.06)">二期</span>
+					</a>
+				</nav>
+
+				<div class="vip">
+					<div class="vip-title">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+							stroke-linejoin="round">
+							<path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8L12 2z" />
+						</svg>
+						临权 Pro 会员
+					</div>
+					<div class="vip-desc">解锁无限授权 · 批量管理 · 数据导出</div>
+					<div class="vip-progress"><i id="quotaBar" style="width:20%"></i></div>
+					<button class="vip-btn" id="vipBtn">升级会员</button>
+				</div>
+
+				<div class="sidebar-foot">
+					<div class="avatar" id="footAvatar">管</div>
+					<div style="flex:1;min-width:0">
+						<div class="foot-name" id="footName">管理员</div>
+						<div class="foot-role" id="footRole">家庭 · 账户中心</div>
+					</div>
+					<button class="foot-logout" id="logoutBtn" title="退出登录">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+							stroke-linecap="round" stroke-linejoin="round">
+							<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+						</svg>
+					</button>
+				</div>
+			</aside>
+
+			<div class="mask" id="mask"></div>
+
+			<!-- ================= 主内容 Main ================= -->
+			<div class="main">
+				<header class="topbar">
+					<button class="hamburger" id="hamburger" aria-label="菜单">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+							stroke-linecap="round">
+							<path d="M3 6h18M3 12h18M3 18h18" />
+						</svg>
+					</button>
+					<div class="top-title">
+						临权控制台
+						<span class="sub">TEMPORARY CREDENTIAL ACCESS</span>
+					</div>
+					<div class="top-actions">
+						<div class="search">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+								stroke-linecap="round">
+								<circle cx="11" cy="11" r="7" />
+								<path d="m21 21-4-4" />
+							</svg>
+							<input id="globalSearch" placeholder="搜索类型 / 备注 / 密码…">
+						</div>
+						<button class="top-btn" id="exportBtn">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+								stroke-linecap="round" stroke-linejoin="round">
+								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+							</svg>
+							导出
+						</button>
+						<button class="top-btn primary" id="quickCreate">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+								stroke-linecap="round">
+								<path d="M12 5v14M5 12h14" />
+							</svg>
+							新建授权
+						</button>
+					</div>
+				</header>
+
+				<main class="content">
+
+					<!-- ================= 视图：总览仪表盘 ================= -->
+					<section class="view active" id="view-dashboard">
+						<div class="page-head">
+							<div>
+								<h2>总览仪表盘</h2>
+								<p id="dashDate">实时掌握临时授权状态与安全态势</p>
+							</div>
+						</div>
+
+						<div class="quota">
+							<div class="q-l">
+								<div class="q-t">免费版配额</div>
+								<div class="q-s">当前有效授权占用免费额度，升级 Pro 解锁无限授权</div>
+								<div class="bar"><i id="quotaBar2" style="width:20%"></i></div>
+							</div>
+							<div class="q-num">已用 <b id="quotaUsed">0</b> / <b id="quotaTotal">5</b></div>
+						</div>
+
+						<div class="stat-grid">
+							<div class="stat-card">
+								<div class="ico ico-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+										<rect x="5" y="10" width="14" height="10" rx="2.5" />
+										<path d="M8 10V7.5a4 4 0 0 1 8 0V10" />
+										<circle cx="12" cy="15" r="1.6" />
+									</svg></div>
+								<div class="num" id="statActive">0</div>
+								<div class="lbl">当前有效授权</div>
+								<div class="delta" style="color:#5fe6d2;background:rgba(47,224,203,.12)">生效中</div>
+							</div>
+							<div class="stat-card">
+								<div class="ico ico-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+										<circle cx="12" cy="12" r="9" />
+										<path d="M12 7v5l3 2" />
+									</svg></div>
+								<div class="num" id="statToday">0</div>
+								<div class="lbl">今日新增记录</div>
+								<div class="delta" style="color:#8db6ff;background:rgba(61,139,255,.12)">今日</div>
+							</div>
+							<div class="stat-card">
+								<div class="ico ico-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+										<path
+											d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8L12 3z" />
+									</svg></div>
+								<div class="num" id="statExpired">0</div>
+								<div class="lbl">已过期记录</div>
+								<div class="delta" style="color:#f0cf8d;background:rgba(228,185,91,.12)">累计</div>
+							</div>
+							<div class="stat-card">
+								<div class="ico ico-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+										<rect x="7" y="2" width="10" height="20" rx="2" />
+										<path d="M10 5h4M11 18h2" />
+									</svg></div>
+								<div class="num" id="statDevices">--</div>
+								<div class="lbl">设备在线状态</div>
+								<div class="delta" style="color:#a69bff;background:rgba(120,104,255,.12)">待接入</div>
+							</div>
+						</div>
+
+						<div class="dash-grid">
+							<div class="panel">
+								<div class="panel-h">
+									<h3>即将到期 / 最近记录</h3>
+									<span class="tag" id="recentTag">实时倒计时</span>
+								</div>
+								<div id="recentList"></div>
+							</div>
+							<div class="panel">
+								<div class="panel-h">
+									<h3>设备监控</h3>
+									<span class="tag" style="color:#f0cf8d">二期预留</span>
+								</div>
+								<div class="device-slot">
+									<div class="slot-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+											stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+											<rect x="7" y="2" width="10" height="20" rx="2" />
+											<path d="M10 5h4M11 18h2" />
+										</svg></div>
+									<div class="slot-title">设备在线 · 已接入清单</div>
+									<div class="slot-desc">二期将对接智能路由器 / 智能门锁 API，实现授权到期后自动移除访客账号、实时回传设备在线状态。</div>
+									<span class="slot-pill"><i></i> 预留接入</span>
+								</div>
+								<div class="device-slot" style="margin-top:14px">
+									<div class="slot-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+											stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M20 12a8 8 0 1 1-3-6.2" />
+											<path d="M20 4v5h-5" />
+										</svg></div>
+									<div class="slot-title">账号增删自动化</div>
+									<div class="slot-desc">一期由管理员手动在路由器后台操作；二期接入 API 后实现访客 WiFi 自动增删。</div>
+									<span class="slot-pill"><i></i> 创业蓝图</span>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- ================= 视图：新建授权 ================= -->
+					<section class="view" id="view-create">
+						<div class="page-head">
+							<div>
+								<h2>新建授权</h2>
+								<p>生成限时临时凭证，到期自动失效，可随时收回</p>
+							</div>
+						</div>
+
+						<div class="create-grid">
+							<div class="panel">
+								<div class="panel-h">
+									<h3>授权配置</h3><span class="tag">核心功能</span>
+								</div>
+
+								<div class="field">
+									<label>授权类型</label>
+									<select class="control" id="fType">
+										<option value="wifi">WiFi 访客</option>
+										<option value="lock">门锁密码</option>
+										<option value="smartlock">智能门锁</option>
+										<option value="device">设备登录</option>
+										<option value="room">房间通行</option>
+										<option value="account">软件账号</option>
+										<option value="meeting">会议室预约</option>
+										<option value="printer">打印机 / 办公设备</option>
+										<option value="appliance">智能家电</option>
+										<option value="cloud">邮箱 / 网盘</option>
+										<option value="database">数据库 / 后台系统</option>
+										<option value="cabinet">储物柜 / 快递柜</option>
+										<option value="garage">车库门禁</option>
+										<option value="card">门禁卡 / 电梯卡</option>
+										<option value="safe">保险柜</option>
+										<option value="camera">摄像头</option>
+										<option value="monitor">婴儿 / 宠物监控</option>
+										<option value="charger">充电桩 / 电动车</option>
+										<option value="car">车钥匙 / 远程解锁</option>
+										<option value="server">云主机 / 服务器</option>
+										<option value="guest">访客 / 临时工登记</option>
+										<option value="misc">其他设备</option>
+										<option value="custom">自定义类型…</option>
+									</select>
+									<div class="custom-input" id="fTypeCustom">
+										<input class="control" id="fTypeCustomVal"
+											placeholder="输入自定义授权类型名称，例如：车库卷帘门、包裹柜…">
+									</div>
+								</div>
+
+								<div class="field">
+									<label>有效时长</label>
+									<select class="control" id="fExpire">
+										<option value="5">5 分钟</option>
+										<option value="10">10 分钟</option>
+										<option value="15">15 分钟</option>
+										<option value="30">30 分钟</option>
+										<option value="45">45 分钟</option>
+										<option value="60" selected>1 小时</option>
+										<option value="120">2 小时</option>
+										<option value="240">4 小时</option>
+										<option value="360">6 小时</option>
+										<option value="480">8 小时</option>
+										<option value="720">12 小时</option>
+										<option value="1440">1 天</option>
+										<option value="2880">2 天</option>
+										<option value="4320">3 天</option>
+										<option value="7200">5 天</option>
+										<option value="10080">7 天</option>
+										<option value="20160">14 天</option>
+										<option value="43200">30 天</option>
+										<option value="86400">60 天</option>
+										<option value="custom">自定义时长…</option>
+									</select>
+									<div class="custom-input" id="fExpireCustom">
+										<div class="field-row">
+											<input class="control" id="fExpireVal" type="number" min="0.1" step="0.1"
+												placeholder="时长数值">
+											<select class="control" id="fExpireUnit">
+												<option value="60">分钟</option>
+												<option value="3600" selected>小时</option>
+												<option value="86400">天</option>
+											</select>
+										</div>
+										<div class="hint">可输入小数，例如 0.5 小时 = 30 分钟</div>
+									</div>
+								</div>
+
+								<div class="field">
+									<label>允许设备数量</label>
+									<div class="chips" id="fDeviceChips">
+										<button type="button" class="chip sel" data-dev="1">1 台</button>
+										<button type="button" class="chip" data-dev="2">2 台</button>
+										<button type="button" class="chip" data-dev="3">3 台</button>
+										<button type="button" class="chip" data-dev="5">5 台</button>
+										<button type="button" class="chip" data-dev="unlimited">不限</button>
+										<button type="button" class="chip" data-dev="custom">自定义</button>
+									</div>
+									<div class="custom-input" id="fDeviceCustom">
+										<input class="control" id="fDeviceCustomVal" type="number" min="1" max="99"
+											step="1" placeholder="输入设备数量（1-99）">
+									</div>
+								</div>
+
+								<div class="field">
+									<label>密码位数</label>
+									<div class="chips" id="fPwdChips">
+										<button type="button" class="chip" data-len="6">6 位</button>
+										<button type="button" class="chip sel" data-len="8">8 位</button>
+										<button type="button" class="chip" data-len="10">10 位</button>
+										<button type="button" class="chip" data-len="12">12 位</button>
+										<button type="button" class="chip" data-len="custom">自定义</button>
+									</div>
+									<div class="custom-input" id="fPwdCustom">
+										<input class="control" id="fPwdCustomVal" type="number" min="4" max="32"
+											step="1" placeholder="输入密码位数（4-32）">
+									</div>
+								</div>
+
+								<div class="field">
+									<label>密码组成 <span class="hint" style="display:inline;margin-left:6px">数字 / 字母 /
+											符号</span></label>
+									<div class="chips" id="fPwdTypeChips">
+										<button type="button" class="chip" data-ptype="digit">纯数字</button>
+										<button type="button" class="chip" data-ptype="letter">纯字母</button>
+										<button type="button" class="chip sel" data-ptype="mix">数字 + 字母</button>
+										<button type="button" class="chip" data-ptype="strong">数字 + 字母 + 符号</button>
+									</div>
+								</div>
+
+								<div class="field">
+									<label>备注 <span class="hint"
+											style="display:inline;margin-left:6px">给谁使用</span></label>
+									<textarea class="control" id="fRemark"
+										placeholder="例如：来家里做客的朋友 / 维修师傅 / 短租租客…"></textarea>
+								</div>
+
+								<button class="submit" id="createBtn">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+										stroke-linecap="round" stroke-linejoin="round">
+										<rect x="5" y="10" width="14" height="10" rx="2.5" />
+										<path d="M8 10V7.5a4 4 0 0 1 8 0V10" />
+									</svg>
+									生成临时凭证
+								</button>
+							</div>
+
+							<!-- 生成结果 -->
+							<div class="panel gen-box">
+								<div class="gen-head">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+										stroke-linecap="round" stroke-linejoin="round">
+										<path
+											d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8L12 2z" />
+									</svg>
+									生成结果预览
+								</div>
+								<div id="genResult">
+									<div class="gen-empty">
+										<div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+												stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+												<path d="M12 5v14M5 12h14" />
+											</svg></div>
+										填写左侧配置并点击「生成临时凭证」<br>将在此处展示随机高强度密码
+									</div>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<!-- ================= 视图：授权管理 ================= -->
+					<section class="view" id="view-list">
+						<div class="page-head">
+							<div>
+								<h2>授权管理</h2>
+								<p>查看、延期、吊销或删除授权记录</p>
+							</div>
+						</div>
+
+						<div class="toolbar">
+							<div class="seg" id="statusSeg">
+								<button type="button" class="sel" data-st="all">全部</button>
+								<button type="button" data-st="active">生效中</button>
+								<button type="button" data-st="expired">已过期</button>
+								<button type="button" data-st="revoked">已吊销</button>
+							</div>
+							<label class="select-all">
+								<input type="checkbox" id="selectAll">
+								<span>全选</span>
+							</label>
+							<button type="button" class="batch-del" id="batchDelBtn" disabled>
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+									stroke-linecap="round" stroke-linejoin="round">
+									<path
+										d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+								</svg>
+								批量删除 (<span id="selCount">0</span>)
+							</button>
+							<div class="search">
+								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+									stroke-linecap="round">
+									<circle cx="11" cy="11" r="7" />
+									<path d="m21 21-4-4" />
+								</svg>
+								<input id="listSearch" placeholder="筛选类型 / 备注 / 密码…">
+							</div>
+						</div>
+
+						<div id="listWrap"></div>
+					</section>
+
+					<!-- ================= 视图：数据统计 ================= -->
+					<section class="view" id="view-stats">
+						<div class="page-head">
+							<div>
+								<h2>数据统计</h2>
+								<p>授权趋势 · 场景分布 · 安全风险洞察</p>
+							</div>
+						</div>
+
+						<div class="kpis">
+							<div class="kpi">
+								<div class="kn" id="kTotal">0</div>
+								<div class="kl">累计授权记录</div>
+								<div class="kd" style="color:#8db6ff">全部历史</div>
+							</div>
+							<div class="kpi">
+								<div class="kn" id="kRevoke">0</div>
+								<div class="kl">主动收回权限</div>
+								<div class="kd" style="color:#f79a9a">手动吊销</div>
+							</div>
+							<div class="kpi">
+								<div class="kn" id="kAvg">0</div>
+								<div class="kl">平均授权时长</div>
+								<div class="kd" style="color:#5fe6d2">小时 / 次</div>
+							</div>
+						</div>
+
+						<div class="stats-grid">
+							<div class="panel">
+								<div class="panel-h">
+									<h3>月度授权趋势</h3><span class="tag" id="trendTag">近 6 个月</span>
+								</div>
+								<div class="chart-box" id="chartTrend"></div>
+							</div>
+							<div class="panel">
+								<div class="panel-h">
+									<h3>授权场景分布</h3><span class="tag">占比</span>
+								</div>
+								<div class="chart-box sm" id="chartType"></div>
+							</div>
+						</div>
+
+						<div class="panel">
+							<div class="panel-h">
+								<h3>安全风险提示</h3><span class="tag">智能监测</span>
+							</div>
+							<div class="risk-list" id="riskList"></div>
+						</div>
+					</section>
+
+					<!-- ================= 视图：设备监控（二期预留） ================= -->
+					<section class="view" id="view-devices">
+						<div class="page-head">
+							<div>
+								<h2>设备监控</h2>
+								<p>二期模块 · 对接智能设备实时状态</p>
+							</div>
+						</div>
+						<div class="panel" style="text-align:center;padding:70px 20px">
+							<div class="gen-empty" style="border:none;padding:0">
+								<div class="big" style="width:64px;height:64px"><svg viewBox="0 0 24 24" fill="none"
+										stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+										stroke-linejoin="round">
+										<path d="M20 12a8 8 0 1 1-3-6.2" />
+										<path d="M20 4v5h-5" />
+									</svg></div>
+								设备监控模块将在二期接入<br>
+								支持智能路由器 / 智能门锁 API，实时回传设备在线状态与访客账号增删。
+							</div>
+						</div>
+					</section>
+
+					<!-- ================= 视图：记录导出（二期预留） ================= -->
+					<section class="view" id="view-export">
+						<div class="page-head">
+							<div>
+								<h2>记录导出</h2>
+								<p>二期模块 · 导出授权台账与审计数据</p>
+							</div>
+						</div>
+						<div class="panel" style="text-align:center;padding:70px 20px">
+							<div class="gen-empty" style="border:none;padding:0">
+								<div class="big" style="width:64px;height:64px"><svg viewBox="0 0 24 24" fill="none"
+										stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+										stroke-linejoin="round">
+										<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+									</svg></div>
+								授权台账导出（CSV / 审计报表）将在二期上线<br>
+								会员版可一键导出全部历史授权记录。
+							</div>
+						</div>
+					</section>
+
+				</main>
+			</div>
+		</div>
+
+		<div id="toastBox"></div>
+		<button type="button" id="backTop" class="back-top" title="回到顶部">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+				stroke-linejoin="round">
+				<path d="M12 19V5M5 12l7-7 7 7" />
+			</svg>
+		</button>
+
+		<!-- ================= 弹窗：延期时长 ================= -->
+		<div class="modal" id="extendModal">
+			<div class="modal-card">
+				<div class="modal-ico ico-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+						stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="12" cy="12" r="9" />
+						<path d="M12 7v5l3 2" />
+					</svg></div>
+				<h3>延期授权</h3>
+				<div class="m-sub" id="extendSub">为该授权追加有效时长</div>
+				<div class="field">
+					<div class="chips" id="extendChips">
+						<button type="button" class="chip" data-h="0.5">30 分钟</button>
+						<button type="button" class="chip sel" data-h="1">1 小时</button>
+						<button type="button" class="chip" data-h="6">6 小时</button>
+						<button type="button" class="chip" data-h="24">1 天</button>
+						<button type="button" class="chip" data-h="72">3 天</button>
+						<button type="button" class="chip" data-h="168">7 天</button>
+						<button type="button" class="chip" data-h="720">30 天</button>
+					</div>
+				</div>
+				<div class="m-actions">
+					<button class="btn-ghost" data-close>取消</button>
+					<button class="btn-primary" id="extendOk">确认延期</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- ================= 弹窗：删除确认 ================= -->
+		<div class="modal" id="delModal">
+			<div class="modal-card">
+				<div class="modal-ico" style="background:rgba(243,107,107,.15)"><svg viewBox="0 0 24 24" fill="none"
+						stroke="#f79a9a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+						<path
+							d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" />
+					</svg></div>
+				<h3>删除授权记录</h3>
+				<div class="m-sub">删除后该临时密码将立即失效，且记录从历史台账中永久移除，无法恢复。此操作不可撤销。</div>
+				<div class="m-actions">
+					<button class="btn-ghost" data-close>取消</button>
+					<button class="btn-danger" id="delOk">确认删除</button>
+				</div>
+			</div>
+		</div>
+
+		<script src="js/script.js"></script>
+	</body>
+</html>
